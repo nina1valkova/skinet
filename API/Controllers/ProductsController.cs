@@ -1,5 +1,6 @@
 using Core.Entities;
 using Core.Interfaces;
+using Core.Specification;
 using Infrastructure.Data;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -8,7 +9,7 @@ namespace API.Controllers;
 
 [ApiController]
 [Route("api/[Controller]")]
-public class ProductsController(IProductRepository repo) : ControllerBase
+public class ProductsController(/*IProductRepository repo*/ IGenericRepository<Product> repo) : ControllerBase
 {
   /*  private readonly StoreContext context;
 
@@ -29,7 +30,15 @@ public class ProductsController(IProductRepository repo) : ControllerBase
     public async Task<ActionResult<IReadOnlyList<Product>>> GetProducts(string? brand, string? type, string? sort)
     {
        // return await context.Products.ToListAsync();
-       return Ok(await repo.GetProductsAsync(brand, type, sort));
+       //return Ok(await repo.GetProductsAsync(brand, type, sort));
+
+       var spec = new ProductSpecification(brand, type, sort);
+
+       var products = await repo.ListAsync(spec);
+
+
+       return Ok(products);
+        //return Ok(await repo.ListAllAsync());
     }
 
     [HttpGet("{id:int}")]
@@ -37,7 +46,11 @@ public class ProductsController(IProductRepository repo) : ControllerBase
     {
         //var product = await context.Products.FindAsync(id);
 
-        var product = await repo.GetProductByIdAsync(id);
+
+
+       // var product = await repo.GetProductByIdAsync(id);
+
+        var product = await repo.GetByIdAsync(id);
 
         if(product == null)
         {
@@ -54,9 +67,13 @@ public class ProductsController(IProductRepository repo) : ControllerBase
 
        // await context.SaveChangesAsync();
 
-       repo.AddProduct(product);
 
-       if(await repo.SaveChangesAsync())
+
+       //repo.AddProduct(product);
+
+
+       repo.Add(product);
+       if(await /*repo.SaveChangesAsync()*/ repo.SaveAllAsync())
        {
            return CreatedAtAction("GetProduct", new {id = product.Id}, product);
        }
@@ -78,9 +95,13 @@ public class ProductsController(IProductRepository repo) : ControllerBase
 
         //await context.SaveChangesAsync();
 
-        repo.UpdateProduct(product);
+      
+      
+       // repo.UpdateProduct(product);
 
-        if(await repo.SaveChangesAsync())
+       repo.Update(product);
+
+        if(/*await repo.SaveChangesAsync()*/ await repo.SaveAllAsync())
         {
             return NoContent();
         }
@@ -95,15 +116,19 @@ public class ProductsController(IProductRepository repo) : ControllerBase
     {
         //var product = await context.Products.FindAsync(id);
 
-        var product = await repo.GetProductByIdAsync(id);
+        
+        //var product = await repo.GetProductByIdAsync(id);
+
+        var product = await repo.GetByIdAsync(id);
         if(product == null)
         {
             return NotFound();
         }
 
-        repo.DeleteProduct(product);
+        //repo.DeleteProduct(product);
+        repo.Remove(product);
 
-        if(await repo.SaveChangesAsync())
+        if(/*await repo.SaveChangesAsync()*/ await repo.SaveAllAsync())
         {
             return NoContent();
         }
@@ -114,7 +139,7 @@ public class ProductsController(IProductRepository repo) : ControllerBase
 
         return NoContent();
     }
-
+/*
     [HttpGet("brands")]
     public async Task<ActionResult<IReadOnlyList<string>>> GetBrands()
     {
@@ -126,10 +151,31 @@ public class ProductsController(IProductRepository repo) : ControllerBase
     {
         return Ok(await repo.GetTypesAsync());
     }
+*/
 
+
+    [HttpGet("brands")]
+    public async Task<ActionResult<IReadOnlyList<string>>> GetBrands()
+    {
+        var spec = new BrandListSpecification();
+
+        return Ok(await repo.ListAsync(spec));
+    }
+
+    [HttpGet("types")]
+    public async Task<ActionResult<IReadOnlyList<string>>> GetTypes()
+    {
+        var spec = new TypeListSpecificaton();
+
+        return Ok(await repo.ListAsync(spec));
+    }
    private bool ProductExists(int id)
 {
     //return context.Products.Any(x => x.Id == id);
-    return repo.ProductExists(id);
+    
+    
+    //return repo.ProductExists(id);
+
+     return repo.Exists(id);
 }
 }
