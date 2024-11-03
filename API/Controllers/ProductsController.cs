@@ -1,3 +1,4 @@
+using API.RequestHelpers;
 using Core.Entities;
 using Core.Interfaces;
 using Core.Specification;
@@ -7,9 +8,8 @@ using Microsoft.EntityFrameworkCore;
 
 namespace API.Controllers;
 
-[ApiController]
-[Route("api/[Controller]")]
-public class ProductsController(/*IProductRepository repo*/ IGenericRepository<Product> repo) : ControllerBase
+
+public class ProductsController(/*IProductRepository repo*/ IGenericRepository<Product> repo) : BaseApiController
 {
   /*  private readonly StoreContext context;
 
@@ -27,17 +27,26 @@ public class ProductsController(/*IProductRepository repo*/ IGenericRepository<P
     }
     */
     [HttpGet]
-    public async Task<ActionResult<IReadOnlyList<Product>>> GetProducts(string? brand, string? type, string? sort)
+    public async Task<ActionResult<IReadOnlyList<Product>>> GetProducts(/*string? brand, string? type, string? sort*/ [FromQuery]ProductSpecParams specParams)
     {
        // return await context.Products.ToListAsync();
        //return Ok(await repo.GetProductsAsync(brand, type, sort));
 
-       var spec = new ProductSpecification(brand, type, sort);
+       var spec = new ProductSpecification(/*brand, type, sort*/specParams);
 
-       var products = await repo.ListAsync(spec);
+       return await CreatePagedResult(repo, spec, specParams.PageIndex, specParams.PageSize);
 
+      /* var products = await repo.ListAsync(spec);
 
-       return Ok(products);
+       var count = await repo.CountAsync(spec);
+
+       var pagination = new Pagination<Product>(specParams.PageIndex, specParams.PageSize, count, products);
+
+      return Ok(pagination);
+*/
+
+      // return Ok(products);
+
         //return Ok(await repo.ListAllAsync());
     }
 
@@ -152,6 +161,7 @@ public class ProductsController(/*IProductRepository repo*/ IGenericRepository<P
         return Ok(await repo.GetTypesAsync());
     }
 */
+
 
 
     [HttpGet("brands")]
